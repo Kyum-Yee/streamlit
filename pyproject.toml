@@ -1,0 +1,8 @@
+[project]
+name = "glowscript-streamlit"
+version = "0.1.0"
+description = "Streamlit 페이지 안에서 GlowScript(Web VPython) 3D 시뮬레이션을 편집·실행한다"
+requires-python = ">=3.11"
+dependencies = [
+    "streamlit>=1.66",
+]

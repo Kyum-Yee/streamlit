@@ -1,0 +1,5 @@
+.venv/
+__pycache__/
+.DS_Store
+# Streamlit 비밀값: public 저장소에 올리지 않는다
+.streamlit/secrets.toml
