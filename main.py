@@ -45,7 +45,7 @@ def table(tau: float) -> pd.DataFrame:
 
 # ---------- 사이드바 ----------
 with st.sidebar:
-    st.markdown("### 발표자")
+    st.markdown("## 발표자")
     st.markdown("**Kyum-Yee**")
     st.markdown("분야: 국어 · 벡터")
     st.divider()
@@ -145,33 +145,55 @@ with tabs[2]:
 # ---------- ④ 결과 분석 ----------
 with tabs[3]:
     st.header("결과 분석")
-    tau = st.slider("τ (닮았다고 볼 코사인 문턱)", 0.50, 0.90, TAU, 0.05)
-    df = table(tau)
-    chart = (
-        alt.Chart(df)
-        .mark_bar(cornerRadiusTopLeft=3, cornerRadiusTopRight=3)
-        .encode(
-            x=alt.X("문항:N", sort=None, title=None),
-            y=alt.Y("난도 지수 D:Q", title="난도 지수 D"),
-            color=alt.Color("결과:N", scale=alt.Scale(domain=list(RESULT_COLOR), range=list(RESULT_COLOR.values())),
-                            legend=alt.Legend(orient="top", title=None)),
-            tooltip=["문항", "결과", "가장 헷갈렸을 선지", alt.Tooltip("난도 지수 D:Q", format=".2f")],
-        )
-        .properties(height=280)
+    st.markdown(
+        f"문항마다 정답과 나머지 네 선지의 코사인 유사도를 재고, τ = {TAU:.2f}로 난도 지수 D를 구해 "
+        "실제 결과(오답·운통과·정답)와 견주었습니다."
     )
-    text = chart.mark_text(dy=-8, fontSize=12).encode(text=alt.Text("난도 지수 D:Q", format=".2f"), color=alt.value("#333"))
-    st.altair_chart(chart + text, width="stretch")
+
+    def d_chart(df: pd.DataFrame) -> alt.LayerChart | alt.FacetChart:
+        bars = (
+            alt.Chart(df)
+            .mark_bar(cornerRadiusTopLeft=3, cornerRadiusTopRight=3)
+            .encode(
+                x=alt.X("문항:N", sort=None, title=None, axis=alt.Axis(labelAngle=0)),
+                y=alt.Y("난도 지수 D:Q", title="난도 지수 D"),
+                color=alt.Color("결과:N", scale=alt.Scale(domain=list(RESULT_COLOR), range=list(RESULT_COLOR.values())),
+                                legend=alt.Legend(orient="bottom", title=None)),
+                tooltip=["문항", "결과", "가장 헷갈렸을 선지", alt.Tooltip("난도 지수 D:Q", format=".2f")],
+            )
+            .properties(height=330)
+        )
+        labels = bars.mark_text(dy=-8, fontSize=12).encode(
+            text=alt.Text("난도 지수 D:Q", format=".2f"), color=alt.value("#333"))
+        return bars + labels
+
+    df = table(TAU)
+    left, right = st.columns([5, 6])
+    with left:
+        st.dataframe(
+            df.set_index("문항")[["결과", "가장 헷갈렸을 선지", "정답과 cos", "난도 지수 D"]]
+            .style.format({"정답과 cos": "{:.2f}", "난도 지수 D": "{:.2f}"}),
+            width="stretch", height=388,
+        )
+    with right:
+        st.altair_chart(d_chart(df), width="stretch")
 
     top3 = df.sort_values("난도 지수 D", ascending=False).head(3)["문항"].tolist()
     wrong = df[df["결과"] == "오답"]
     hit = (wrong["가장 헷갈렸을 선지"] == wrong["내 답"]).sum()
-    st.markdown(
-        f"- τ = {tau:.2f}에서 D 상위 세 문항은 **{', '.join(top3)}**입니다. 실제로 틀린 문항은 "
-        f"**{', '.join(wrong['문항'])}**입니다.\n"
-        f"- 틀린 세 문항에서 '가장 헷갈렸을 선지'가 실제로 고른 답과 같았던 것은 **{hit}/{len(wrong)}**입니다.\n"
-        "- 운으로 맞힌 2번은 틀린 문항 다음으로 D가 큽니다."
+    st.success(
+        f"D 상위 세 문항({', '.join(top3)})이 실제로 틀린 세 문항과 같고, 운으로 맞힌 2번이 그다음입니다. "
+        f"틀린 {len(wrong)}문항 가운데 {hit}문항에서 '가장 헷갈렸을 선지'가 실제로 고른 답과 같았습니다."
     )
-    st.dataframe(df.set_index("문항").style.format({"정답과 cos": "{:.2f}", "난도 지수 D": "{:.2f}"}), width="stretch")
+
+    with st.expander("τ를 바꿔도 같을까?"):
+        tau = st.slider("τ (닮았다고 볼 코사인 문턱)", 0.50, 0.90, TAU, 0.05)
+        dft = table(tau)
+        st.altair_chart(d_chart(dft), width="stretch")
+        t3 = dft.sort_values("난도 지수 D", ascending=False).head(3)["문항"].tolist()
+        st.markdown(f"τ = {tau:.2f}에서 D 상위 세 문항: **{', '.join(t3)}**")
+        st.dataframe(dft.set_index("문항").style.format({"정답과 cos": "{:.2f}", "난도 지수 D": "{:.2f}"}),
+                     width="stretch")
 
     # ---------- 어느 축에 흔들리나 ----------
     st.subheader("나는 어느 축에 흔들리나")
@@ -267,7 +289,7 @@ with tabs[5]:
          "완전 부정이지만 지문과 어긋나지 않으므로 −0.30만 깎는다. 정반대 말은 −1.50이다."),
     ]
     for i, (q, choices, ans, why) in enumerate(quiz):
-        pick = st.radio(f"Q{i + 1}. {q}", choices, index=None, key=f"quiz{i}", horizontal=True)
+        pick = st.radio(f"Q{i + 1}. {q}", choices, index=None, key=f"quiz{i}")
         if pick is not None:
             if pick == ans:
                 st.success(f"정답! {why}")

@@ -52,7 +52,11 @@ GOLD = vec(0.95, 0.62, 0.05)     # 정답
 RED = vec(0.88, 0.18, 0.22)      # 내가 고른 오답
 
 # ---------- ① 무대 ----------
-scene.title = "<b>선지 벡터</b> — 끌어서 돌리고, 휠로 확대한다"
+scene.title = """
+<h2>선지 벡터 시뮬레이션</h2>
+<p>제작: Kyum-Yee | 주제: 헷갈리는 선지는 정답과 닮았을까?<br>
+<span style="color:#777">화면을 끌면 돌아가고, 휠로 확대한다.</span></p>
+"""
 scene.width = 820
 scene.height = 460
 scene.background = color.white
