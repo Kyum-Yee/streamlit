@@ -12,7 +12,7 @@ import presentation as P
 import sim
 from glowscript_view import build_html
 
-SECTIONS = ["① 탐구 질문", "② 시뮬레이션", "③ 원리", "④ 결과 분석", "⑤ 결론과 한계", "⑥ 퀴즈"]
+SECTIONS = ["⓪ 문제 풀기와 배경", "① 탐구 질문", "② 시뮬레이션", "③ 원리", "④ 결과 분석", "⑤ 결론과 한계", "⑥ 퀴즈"]
 RESULT_COLOR = {"오답": "#d64545", "운통과": "#f0a020", "정답": "#9aa3ad"}
 
 st.set_page_config(page_title="선지 벡터 탐구 발표", page_icon="🧭", layout="wide")
@@ -59,8 +59,68 @@ st.caption("VPython 3차원 벡터로 본 2026-10-21 국어 모의고사 10문�
 
 tabs = st.tabs(SECTIONS)
 
-# ---------- ① 탐구 질문 ----------
+# ---------- ⓪ 문제 풀기와 배경 ----------
 with tabs[0]:
+    st.header("국어 모의고사 문제 풀기")
+    solve_no = st.selectbox(
+        "풀 문항",
+        list(Q),
+        format_func=lambda question_no: f"{question_no}번 · {Q[question_no]['stem']}",
+        key="solve_question",
+    )
+    solve_question = Q[solve_no]
+    solve_material = P.question_material(d, solve_no)
+    with st.container(height=520, border=True):
+        st.markdown(solve_material["passage"])
+        if solve_material["box"]:
+            st.divider()
+            st.markdown("**〈보기〉**")
+            st.markdown(solve_material["box"])
+    st.markdown(f"### {solve_no}. {solve_material['stem']}")
+    solve_pick = st.radio(
+        "답을 고르세요",
+        range(1, len(solve_material["options"]) + 1),
+        format_func=lambda option_no: f"{n(option_no)} {solve_material['options'][option_no - 1]}",
+        index=None,
+        key=f"solve_pick_{solve_no}",
+    )
+    if st.button("정답 확인", type="primary", key=f"solve_submit_{solve_no}"):
+        feedback = P.answer_feedback(solve_question, solve_pick)
+        {
+            "success": st.success,
+            "error": st.error,
+            "warning": st.warning,
+        }[feedback["kind"]](feedback["message"])
+
+    st.divider()
+    st.subheader("탐구 배경")
+    st.markdown(
+        "2026년 10월 21일 국어 모의고사 10문항을 풀고, 왜 어떤 오답이 정답처럼 보였는지 알아보기 위해 "
+        "50개 선지를 3차원 벡터로 바꾸었습니다. 정답과 오답의 방향이 비슷할수록 헷갈릴 것이라는 가설을 "
+        "코사인 유사도와 난도 지수로 확인합니다."
+    )
+
+    st.subheader("세 축")
+    st.markdown("선지를 지문과 대조할 때 **사실(x) · 관계(y) · 개념(z)** 세 기준을 따로 봅니다.")
+    st.table(pd.DataFrame(
+        [{"축": f"{axis['key']} {axis['name']}", "확인할 것": axis["q"]} for axis in d["axes"]]
+    ).set_index("축"))
+    st.caption("각 축에서 0은 지문 근거 없음, 양수는 지문이 받침, 음수는 지문과 어긋남을 뜻합니다.")
+
+    st.subheader("용어 정의")
+    st.table(pd.DataFrame(P.glossary()).set_index("용어"))
+
+    with st.expander("예시 데이터셋 — 정답·내 답 포함"):
+        st.caption("현재 선택한 문항을 선지 단위로 펼친 자료입니다. 정답과 실제로 기록된 내 답을 따로 표시합니다.")
+        st.dataframe(
+            pd.DataFrame(P.example_dataset_rows(solve_question)),
+            hide_index=True,
+            width="stretch",
+            column_config={"선지 내용": st.column_config.TextColumn(width="large")},
+        )
+
+# ---------- ① 탐구 질문 ----------
+with tabs[1]:
     st.header("탐구 질문")
     wrong = [q["no"] for q in d["questions"] if q["mine"] != q["answer"]]
     st.markdown(
@@ -79,7 +139,7 @@ with tabs[0]:
     )
 
 # ---------- ② 시뮬레이션 ----------
-with tabs[1]:
+with tabs[2]:
     st.header("시뮬레이션")
     st.markdown(
         "문항을 고른 뒤 선지를 켜고 끄며 정답(주황)·내 답(빨강)·가장 헷갈렸을 선지(★)를 비교해 보세요. "
@@ -93,7 +153,7 @@ with tabs[1]:
         st.download_button("코드 내려받기", source, file_name="option_vectors.py", mime="text/x-python")
 
 # ---------- ③ 원리 ----------
-with tabs[2]:
+with tabs[3]:
     st.header("원리")
     st.markdown(
         "선지를 지문과 대조하는 세 기준을 축으로 삼았습니다. 0은 '지문에 근거 없음', "
@@ -144,7 +204,7 @@ with tabs[2]:
     st.caption(f"50개 선지 벡터에서 축끼리의 피어슨 상관. 대각선 밖 최대 |r| = {off:.2f}로, 한 축이 다른 축을 거의 설명하지 못한다.")
 
 # ---------- ④ 결과 분석 ----------
-with tabs[3]:
+with tabs[4]:
     st.header("결과 분석")
     st.markdown(
         f"문항마다 정답과 나머지 네 선지의 코사인 유사도를 재고, τ = {TAU:.2f}로 난도 지수 D를 구해 "
@@ -283,7 +343,7 @@ with tabs[3]:
     )
 
 # ---------- ⑤ 결론과 한계 ----------
-with tabs[4]:
+with tabs[5]:
     s7, s5, s9 = (A.stats(Q[k], TAU) for k in (7, 5, 9))
     st.header("결론")
     st.markdown(
@@ -311,7 +371,7 @@ with tabs[4]:
     st.markdown("다음 모의고사에서 풀기 **전에** D를 먼저 계산해 두면, 틀릴 문항을 미리 맞힐 수 있을까?")
 
 # ---------- ⑥ 퀴즈 ----------
-with tabs[5]:
+with tabs[6]:
     st.header("퀴즈")
     st.caption("특정 문항의 수치를 외우는 대신, 이 탐구에서 사용한 원리를 적용해 보세요.")
     for i, item in enumerate(P.principle_quiz()):

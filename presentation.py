@@ -49,6 +49,46 @@ def option_stat_rows(question: dict) -> list[dict]:
     return rows
 
 
+def answer_feedback(question: dict, picked: int | None) -> dict[str, str]:
+    """사용자가 직접 푼 답을 채점하되 제출 전에는 정답을 감춘다."""
+    if picked is None:
+        return {"kind": "warning", "message": "답을 먼저 고르세요."}
+
+    answer = A.NUM[question["answer"] - 1]
+    if picked == question["answer"]:
+        return {"kind": "success", "message": f"정답입니다. 정답은 {answer}입니다."}
+    return {"kind": "error", "message": f"오답입니다. 정답은 {answer}입니다."}
+
+
+def glossary() -> list[dict[str, str]]:
+    """발표를 읽기 전에 필요한 용어의 짧은 정의."""
+    return [
+        {"용어": "선지", "정의": "문항에서 고르는 각각의 선택 문장."},
+        {"용어": "벡터", "정의": "선지의 사실·관계·개념 근거를 (x, y, z) 세 값으로 나타낸 것."},
+        {"용어": "근거 지지도", "정의": "지문이 선지를 얼마나 직접 받치는지 축마다 준 기본값."},
+        {"용어": "단어 효과", "정의": "반의·치환·층위 같은 표현이 해당 축의 값을 깎는 정도."},
+        {"용어": "코사인 유사도", "정의": "두 벡터의 방향이 얼마나 같은지 나타내는 −1~1의 값."},
+        {"용어": "문턱 τ", "정의": "두 선지가 닮았다고 세기 시작하는 코사인 유사도 기준."},
+        {"용어": "난도 지수 D", "정의": "정답과 문턱 이상 닮은 오답의 수와 닮은 정도를 합친 값."},
+    ]
+
+
+def example_dataset_rows(question: dict) -> list[dict]:
+    """문항 하나를 선지 단위 데이터셋으로 펼쳐 정답과 내 답을 구분한다."""
+    rows = []
+    for option_no, option in enumerate(question["options"], 1):
+        vector = ", ".join(f"{value:.2f}" for value in option["vec"])
+        rows.append({
+            "문항": f"{question['no']}번",
+            "선지": A.NUM[option_no - 1],
+            "선지 내용": option["text"],
+            "벡터 (x, y, z)": f"({vector})",
+            "정답": "✓" if option_no == question["answer"] else "",
+            "내 답": "✓" if option_no == question["mine"] else "",
+        })
+    return rows
+
+
 def principle_quiz() -> list[dict]:
     """개별 문항의 수치를 외우지 않고 모델의 원리를 적용하는 퀴즈."""
     return [

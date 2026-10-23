@@ -53,5 +53,45 @@ class PrincipleQuizTest(unittest.TestCase):
         self.assertTrue(all(item["answer"] in item["choices"] for item in quiz))
 
 
+class SolveQuestionTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.question = A.load()["questions"][0]
+
+    def test_missing_answer_asks_for_a_choice(self) -> None:
+        feedback = P.answer_feedback(self.question, None)
+
+        self.assertEqual(feedback["kind"], "warning")
+        self.assertNotIn("⑤", feedback["message"])
+
+    def test_correct_answer_is_confirmed(self) -> None:
+        feedback = P.answer_feedback(self.question, 5)
+
+        self.assertEqual(feedback, {"kind": "success", "message": "정답입니다. 정답은 ⑤입니다."})
+
+    def test_wrong_answer_reveals_the_correct_choice(self) -> None:
+        feedback = P.answer_feedback(self.question, 1)
+
+        self.assertEqual(feedback, {"kind": "error", "message": "오답입니다. 정답은 ⑤입니다."})
+
+    def test_glossary_defines_the_model_terms(self) -> None:
+        terms = {item["용어"] for item in P.glossary()}
+
+        self.assertEqual(
+            terms,
+            {"선지", "벡터", "근거 지지도", "단어 효과", "코사인 유사도", "문턱 τ", "난도 지수 D"},
+        )
+
+    def test_example_dataset_keeps_answer_and_my_answer_separate(self) -> None:
+        question = A.load()["questions"][4]
+        rows = P.example_dataset_rows(question)
+
+        self.assertEqual(rows[1]["정답"], "✓")
+        self.assertEqual(rows[1]["내 답"], "")
+        self.assertEqual(rows[2]["정답"], "")
+        self.assertEqual(rows[2]["내 답"], "✓")
+        self.assertEqual(rows[2]["선지 내용"], question["options"][2]["text"])
+
+
 if __name__ == "__main__":
     unittest.main()
