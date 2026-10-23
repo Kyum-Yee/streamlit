@@ -8,6 +8,7 @@ import pandas as pd
 import streamlit as st
 
 import analysis as A
+import presentation as P
 import sim
 from glowscript_view import build_html
 
@@ -150,6 +151,39 @@ with tabs[3]:
         "실제 결과(오답·운통과·정답)와 견주었습니다."
     )
 
+    st.subheader("내가 푼 문제 전문과 선지별 통계")
+    selected_no = st.selectbox(
+        "문항 선택",
+        list(Q),
+        format_func=lambda question_no: f"{question_no}번 · {Q[question_no]['stem']}",
+        key="analysis_question",
+    )
+    material = P.question_material(d, selected_no)
+    question_rows = P.option_stat_rows(Q[selected_no])
+    question_col, option_col = st.columns([3, 2], vertical_alignment="top")
+    with question_col:
+        st.markdown("**문제 전문**")
+        with st.container(height=620, border=True):
+            st.markdown(material["passage"])
+            if material["box"]:
+                st.divider()
+                st.markdown("**〈보기〉**")
+                st.markdown(material["box"])
+            st.divider()
+            st.markdown(f"**{selected_no}. {material['stem']}**")
+            for option_no, option_text in enumerate(material["options"], 1):
+                st.markdown(f"{n(option_no)} {option_text}")
+    with option_col:
+        st.markdown("**선지 텍스트와 통계**")
+        with st.container(height=620, border=True):
+            for row in question_rows:
+                st.markdown(
+                    f"**{row['선지']} {row['표시']}**  \n"
+                    f"정답과 cos = **{row['정답과 cos']:.2f}**"
+                )
+                st.write(row["선지 내용"])
+                st.divider()
+
     def d_chart(df: pd.DataFrame) -> alt.LayerChart | alt.FacetChart:
         bars = (
             alt.Chart(df)
@@ -279,19 +313,16 @@ with tabs[4]:
 # ---------- ⑥ 퀴즈 ----------
 with tabs[5]:
     st.header("퀴즈")
-    quiz = [
-        ("7번에서 정답 ⑤와 코사인 유사도가 1.00인 선지는?", ["①", "②", "③", "④"], "③",
-         "③과 ⑤는 둘 다 (0.60, 0.60, −0.10)이라 방향이 같다. 실제로 고른 답도 ③이었다."),
-        ("τ = 0.70에서 난도 지수 D가 가장 큰 문항은?", ["2번", "5번", "7번", "9번"], "7번",
-         f"7번 D = {s7['D']:.2f}로, τ를 넘는 오답이 {s7['N']}개다."),
-        ("「살아남지 못했으리라」처럼 부정어가 들었지만 뜻은 지문과 같은 말은 그 축을 얼마나 깎을까?",
-         ["−1.50", "−0.70", "−0.30", "0"], "−0.30",
-         "완전 부정이지만 지문과 어긋나지 않으므로 −0.30만 깎는다. 정반대 말은 −1.50이다."),
-    ]
-    for i, (q, choices, ans, why) in enumerate(quiz):
-        pick = st.radio(f"Q{i + 1}. {q}", choices, index=None, key=f"quiz{i}")
+    st.caption("특정 문항의 수치를 외우는 대신, 이 탐구에서 사용한 원리를 적용해 보세요.")
+    for i, item in enumerate(P.principle_quiz()):
+        pick = st.radio(
+            f"Q{i + 1}. [{item['concept']}] {item['question']}",
+            item["choices"],
+            index=None,
+            key=f"quiz{i}",
+        )
         if pick is not None:
-            if pick == ans:
-                st.success(f"정답! {why}")
+            if pick == item["answer"]:
+                st.success(f"정답! {item['why']}")
             else:
                 st.error("다시 생각해 보세요.")

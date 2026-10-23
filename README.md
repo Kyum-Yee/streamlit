@@ -16,10 +16,18 @@ uv run streamlit run main.py
 | 파일 | 역할 |
 |---|---|
 | `main.py` | 발표: ① 탐구 질문 ② 시뮬레이션 ③ 원리 ④ 결과 분석 ⑤ 결론과 한계 ⑥ 퀴즈 |
+| `presentation.py` | 문제 전문·선지별 통계 자료와 원리 적용 퀴즈 |
 | `analysis.py` | 벡터 계산, 코사인 유사도, 난도 지수 D, 축 독립성, 축별 흔들림 통계 |
 | `sim.py` | 선지 벡터를 그리는 VPython 코드를 만든다(glowscript.org에 그대로 붙여 넣어도 돈다) |
 | `glowscript_view.py` | VPython 코드를 브라우저 안에서 컴파일·실행하는 iframe HTML |
 | `data/exam.json` | 지문·발문·선지, 정답·내 답, 축·근거 지지도·단어 효과 정의와 선지별 단어 주석 |
+| `tests/` | 문제 자료 연결과 Streamlit 화면 구성 회귀 테스트 |
+
+## 테스트
+
+```sh
+uv run python -m unittest discover -s tests -v
+```
 
 ## 벡터
 
@@ -32,6 +40,8 @@ uv run streamlit run main.py
 
 - 컴파일과 렌더는 보는 사람의 브라우저가 glowscript.org 라이브러리로 맡는다. 인터넷 연결이 필요하다.
 - 시뮬레이션 화면 아래 콘솔에 선지 좌표, 정답과의 코사인, 켠 선지 n개의 코사인 표, 가장 헷갈렸을 선지, 난도 지수가 나온다.
+- 결과 분석에서 문항을 고르면 실제 지문·보기·발문·선지 전문과 선지별 코사인 통계를 나란히 볼 수 있다.
+- 퀴즈는 개별 문항의 부속 정보 대신 코사인 유사도·난도 지수·벡터 축의 원리를 묻는다.
 
 ## 배포 (Streamlit Community Cloud)
 
